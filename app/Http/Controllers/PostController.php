@@ -12,12 +12,8 @@ class PostController extends Controller
      */
     public function index()
     {
-        // get all posts from the db
-        $name = 'Alfred';
-        $age = 32;
-        return view('posts.index', ['name' => $name, 'age' => $age]);
-
-            
+        $posts = Post::all();
+        return view('posts.index', ['posts' => $posts]);
     }
 
     /**
@@ -25,7 +21,7 @@ class PostController extends Controller
      */
     public function create()
     {
-        
+        return view('posts.create');
     }
 
     /**
@@ -33,14 +29,24 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'title' => ['required', 'min:5', 'max:255'],
+            'content' => ['required', 'min:10'],
+        ]);
+
+        Post::create($validated);
+
+        return redirect()->route('posts.index');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Post $post)
+    public function show($id)
     {
+        $post = Post::findOrFail($id); //find the post based on the id if not -> 404
+
+        return view('posts.show', ['post' => $post]); // ['post' => $post] so that we have it avaible it the view posts.show
     }
 
     /**
@@ -48,7 +54,7 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        //
+        return view('posts.edit', ['post' => $post]); // or we can do it in the same way as in the show method
     }
 
     /**
@@ -56,7 +62,13 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
-        //
+        $validated = $request->validate([
+            'title' => ['required', 'min:5', 'max:255'],
+            'content' => ['required', 'min:10'],
+        ]);
+
+        $post->update($validated); 
+        return to_route('posts.index');
     }
 
     /**
@@ -64,6 +76,7 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-        //
+        $post->delete();
+        return to_route('posts.index');
     }
 }
