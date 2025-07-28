@@ -21,6 +21,9 @@ class PostController extends Controller
      */
     public function create()
     {
+        if(!auth()->check()) {// true if auth, false if not
+            return to_route('login');
+        }
         return view('posts.create');
     }
 
