@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
 {
@@ -21,7 +22,7 @@ class PostController extends Controller
      */
     public function create()
     {
-        if(!auth()->check()) {// true if auth, false if not
+        if (!auth()->check()) { // if user is not logged in, redirect to login page
             return to_route('login');
         }
         return view('posts.create');
@@ -36,8 +37,7 @@ class PostController extends Controller
             'title' => ['required', 'min:5', 'max:255'],
             'content' => ['required', 'min:10'],
         ]);
-
-        Post::create($validated);
+        auth()->user()->posts()->create($validated); // associate the post with the authenticated user
 
         return redirect()->route('posts.index');
     }
@@ -57,7 +57,13 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        return view('posts.edit', ['post' => $post]); // or we can do it in the same way as in the show method
+        $response = Gate::authorize('update', $post); // Check if the user is authorized to update the post
+        if ($response->allowed()) {
+            return view('posts.edit', ['post' => $post]); // or we can do it in the same way as in the show method
+        } else {
+            echo $response->message();
+        }
+        return to_route('posts.show', ['post' => $post]);
     }
 
     /**
@@ -70,8 +76,8 @@ class PostController extends Controller
             'content' => ['required', 'min:10'],
         ]);
 
-        $post->update($validated); 
-        return to_route('posts.index');
+        $post->update($validated);
+        return to_route('posts.show', ['post' => $post]);
     }
 
     /**
@@ -79,7 +85,14 @@ class PostController extends Controller
      */
     public function destroy(Post $post)
     {
-        $post->delete();
-        return to_route('posts.index');
+        $response = Gate::authorize('delete', $post); // Check if the user is authorized to delete the post
+        if ($response->allowed()) {
+            $post->delete();
+            return to_route('posts.index');
+        } else {
+            echo $response->message();
+        }
+
+        return to_route('posts.show', ['post' => $post]);
     }
 }

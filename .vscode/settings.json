@@ -1,3 +1,8 @@
 {
-    "php.version": "8.4"
+    "php.version": "8.4",
+    
+    "remote.extensionKind": {
+        "GitHub.copilot": [ "ui" ],
+        "GitHub.copilot-chat": ["ui"]
+    }
 }
