@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias(['can-view-post' => CanViewPostMiddleware::class]); // Register custom middleware alias
+        $middleware->alias(['is_admin' => \App\Http\Middleware\IsAdminMiddleware::class]); // Register custom middleware alias for admin check
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

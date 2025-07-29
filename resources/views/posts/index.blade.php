@@ -29,4 +29,5 @@
             </div>
         @endforeach
         </ul>
+    </div>
 </x-layout>

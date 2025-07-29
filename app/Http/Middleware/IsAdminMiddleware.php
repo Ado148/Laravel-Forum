@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class CanViewPostMiddleware
+class IsAdminMiddleware
 {
     /**
      * Handle an incoming request.
@@ -15,10 +15,9 @@ class CanViewPostMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(auth()->check()) {
+        if (auth()->check() && auth()->user()->is_admin) {
             return $next($request);
         }
-
-        return redirect()->route('login');
+        abort(403, 'Unauthorized action');
     }
 }

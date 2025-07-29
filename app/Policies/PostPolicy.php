@@ -8,6 +8,14 @@ use Illuminate\Auth\Access\Response;
 
 class PostPolicy
 {
+    public function before(User $user): bool|null // This method is called before any other policy methods -- ak je user nie je admin nema moznost updatovat ani mazat svoj post
+    {
+        if ($user->is_admin) {
+            return true;
+        }
+        return  null;
+    }
+
     /**
      * Determine whether the user can view any models.
      */
