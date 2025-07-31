@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PostMail;
 
 class PostController extends Controller
 {
@@ -36,8 +39,13 @@ class PostController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'min:5', 'max:255'],
             'content' => ['required', 'min:10'],
+            'thumbnail' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
         ]);
+
+        $validated['thumbnail'] = $request->file('thumbnail')->store('thumbnails', 'public'); // Store the thumbnail if provided
         auth()->user()->posts()->create($validated); // associate the post with the authenticated user
+ 
+        Mail::to(auth()->user()->email)->send(new PostMail(['name' => '', 'title' => $validated['title']])); // Send email to the user
 
         return redirect()->route('posts.index');
     }
@@ -57,7 +65,7 @@ class PostController extends Controller
      */
     public function edit(Post $post)
     {
-        $response = Gate::authorize('update', $post); // Check if the user is authorized to update the post
+        $response = Gate::authorize('update', $post); // check if the user is authorized to update the post
         if ($response->allowed()) {
             return view('posts.edit', ['post' => $post]); // or we can do it in the same way as in the show method
         } else {
@@ -71,11 +79,19 @@ class PostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
-        Gate::authorize('update', $post); // Check if the user is authorized to update the post
+        Gate::authorize('update', $post); // check if the user is authorized to update the post
         $validated = $request->validate([
             'title' => ['required', 'min:5', 'max:255'],
             'content' => ['required', 'min:10'],
+            'thumbnail' => ['sometimes', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
         ]);
+
+        if ($request->hasFile('thumbnail')) {
+            File::delete(storage_path('app/public/' . $post->thumbnail)); // Delete the old thumbnail if it exists
+            $validated['thumbnail'] = $request->file('thumbnail')->store('thumbnails', 'public');
+        } else {
+            unset($validated['thumbnail']); // if no thumbnail is provided, remove it from the validated data
+        }
 
         $post->update($validated);
         return to_route('posts.show', ['post' => $post]);
@@ -88,6 +104,9 @@ class PostController extends Controller
     {
         $response = Gate::authorize('delete', $post); // Check if the user is authorized to delete the post
         if ($response->allowed()) {
+            if ($post->thumbnail) {
+                File::delete(storage_path('app/public/' . $post->thumbnail));
+            }
             $post->delete();
             return to_route('posts.index');
         } else {
